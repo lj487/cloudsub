@@ -1,0 +1,43 @@
+# Copy to config.local.toml. Put private values in environment variables.
+[source]
+type = "webdav" # webdav (including OpenList), or http for a single signed video URL
+url_env = "CLOUDSUB_URL"
+# Uncomment BOTH for WebDAV/HTTP Basic authentication:
+# username_env = "CLOUDSUB_USERNAME"
+# password_env = "CLOUDSUB_PASSWORD"
+folder = "" # Relative to the WebDAV endpoint; private folders belong in config.local.toml.
+recursive = false
+allow_http = false # Explicit opt-in for unencrypted HTTP, including local WebDAV.
+
+[transcription]
+model = "small" # faster-whisper model name, or a local CTranslate2 model directory
+device = "cpu"
+compute_type = "int8"
+language = "" # Auto-detect; e.g. en, ja, ko
+offline = false # true requires a previously downloaded/local model
+
+[translation]
+provider = "ollama" # Protocols: ollama, openai, anthropic, gemini
+# OpenAI-compatible presets: deepseek, qwen, doubao, zhipu, kimi, hunyuan, qianfan, minimax
+# url = "http://127.0.0.1:11434" # Optional override; omit to use the provider's default URL.
+model = "" # REQUIRED: installed local model or provider model name
+allow_remote = false # Remote translation sends subtitle text; requires HTTPS and a key.
+json_mode = true # Set false only if an OpenAI-compatible model rejects response_format; JSON output is still required.
+# api_key_env = "CLOUDSUB_TRANSLATION_KEY" # Environment variable NAME, never the key itself.
+
+# To use an external API, EDIT the fields above (do not add another [translation]):
+# provider = "openai"
+# url = "https://api.openai.com/v1" # Or your OpenAI-compatible provider's /v1 base URL
+# model = "your-provider-model"
+# api_key_env = "CLOUDSUB_TRANSLATION_KEY"
+# allow_remote = true
+# Anthropic native: provider="anthropic", url="https://api.anthropic.com/v1"
+# Gemini native: provider="gemini", url="https://generativelanguage.googleapis.com/v1beta"
+# Gemini model is a plain name, without models/ or :generateContent.
+
+# For a preset, EDIT provider above (e.g. "deepseek"), fill model, enable allow_remote,
+# and uncomment api_key_env. REMOVE any explicit url to use the new provider's default.
+# An explicit url always overrides the preset; regional endpoints and keys may differ.
+# For doubao, model may be a model name or inference endpoint ID from your console.
+# hunyuan defaults to TokenHub; existing legacy service accounts may override url.
+# Use a standard inference API key, not a Coding-only subscription credential.
