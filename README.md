@@ -1,8 +1,10 @@
 # CloudSub
 
+[English](README.en.md) | 简体中文
+
 从 WebDAV、OpenList 或 HTTP 视频直链生成字幕。视频下载到本机，由 faster-whisper 识别原文，再通过本地模型或显式配置的外置 API 翻译为简体中文。
 
-这是一个从零编写的命令行项目，使用 MIT 许可。它按协议接入网盘，不包含任何个人账号、历史任务或媒体资料。
+这是一个命令行项目，使用 MIT 许可。它按标准协议（WebDAV / HTTP）接入网盘，不依赖任何厂商的私有登录接口。
 
 ## 支持范围
 
@@ -147,7 +149,7 @@ json_mode = true
 | 智谱 | `zhipu` | `https://open.bigmodel.cn/api/paas/v4` | [OpenAI 兼容接口](https://docs.bigmodel.cn/cn/guide/develop/openai/introduction) |
 | 月之暗面 / Kimi | `kimi` | `https://api.moonshot.cn/v1` | [快速开始](https://platform.kimi.com/docs/get-api-key) |
 | 腾讯混元 / TokenHub | `hunyuan` | `https://tokenhub.tencentcloudmaas.com/v1` | [混元兼容接口与迁移说明](https://cloud.tencent.com/document/product/1729/111007)、[TokenHub 接入](https://intl.cloud.tencent.com/zh/document/product/1300/80632) |
-| 百度千帆 | `qianfan` | `https://qianfan.baidubce.com/v2` | [接入说明](https://cloud.baidu.com/doc/RTC/s/0m9qgqj7h) |
+| 百度千帆 | `qianfan` | `https://qianfan.baidubce.com/v2` | [OpenAI SDK 兼容介绍](https://cloud.baidu.com/doc/qianfan/s/Hmh4suq26) |
 | MiniMax | `minimax` | `https://api.minimax.cn/v1` | [OpenAI 兼容接口](https://platform.minimax.cn/docs/api-reference/text-openai-api) |
 
 例如，使用预设时可省略 `url`：
@@ -189,7 +191,7 @@ cloudsub run --config config.local.toml --original-only
 cloudsub run --config config.local.toml --id TASK_ID
 ```
 
-`list` 默认显示任务 ID 与文件大小；显式加 `--show-paths` 才显示远端路径。`--id` 使用列表中的 ID，`--limit` 限制本次处理数量。递归扫描由配置中的 `recursive = true` 开启，不会自动轮询或创建系统定时任务。
+`list` 默认显示任务 ID 与文件大小；显式加 `--show-paths` 才显示远端路径。`--id` 使用列表中的 ID，`--limit` 限制本次需要新处理的任务数；字幕已存在的任务不计入，因此重复运行 `--limit 1` 会依次处理后面的文件（使用 `--upload` 时每个任务都计入）。递归扫描由配置中的 `recursive = true` 开启，不会自动轮询或创建系统定时任务。
 
 默认结果在 `.local/subtitles`，以任务 ID 命名：`ID.original.srt` 为原文，`ID.zh.srt` 为简体中文。可用 `--output` 选择其他目录；请自行确保该目录不会被提交到 Git。
 
@@ -207,24 +209,20 @@ WebDAV 写回使用视频同目录的 `stem.original.srt` 和 `stem.zh.srt`，�
 
 ## 隐私与限制
 
-- 真实 URL、认证信息、私人配置、字幕、媒体、模型、日志和数据库均不应进入公开仓库。默认输出用任务 ID，不用远端文件名。
-- 错误信息不打印原始 URL、认证头、响应正文或字幕内容；跨来源下载重定向不携带认证与 Cookie，拒绝 HTTPS 降级。默认不读取系统代理环境变量。
+- 默认输出用任务 ID，不用远端文件名；错误信息不打印 URL、认证头、响应正文或字幕内容。凭据处理、重定向与数据边界详见 [SECURITY.md](SECURITY.md)。
 - 单个媒体上限 20 GiB；WebDAV 单次 XML 上限 2 MiB、整次扫描最多 10,000 个条目；下载最多 5 次重定向。首版没有断点续传和自动重试。
 - 20 GiB 是下载文件大小限制，不是识别内存上限。faster-whisper 会整段解码音频：每小时仅 float32 音频就约 220 MiB，识别与 VAD 还需额外内存；长录音请先分段处理。
 - 翻译按每批 12 条请求，整份中文字幕完成后才保存。后续批次失败时重跑会重新请求此前批次，使用外置 API 时可能重复计费；可先用 `--limit 1` 验证模型与额度。
 - 网盘连接与首次识别模型下载仍会联网；启用外置翻译后字幕正文也会出站。本地翻译服务需要由你确认实际使用本机模型、未启用云端转发。
 
-发布前运行：
+## 开发与检查
 
 ```sh
 python -m unittest discover -s tests
-python scripts/check_public.py
 ```
 
-发布检查扫描 Git 已跟踪文件与未被忽略的未跟踪候选文件，采用路径白名单和敏感内容规则，不打印命中的值。它不扫描历史文件内容，也不能保证截图、Git 作者身份或账号关联完全匿名。详见 [隐私与安全说明](SECURITY.md)。
+维护者公开前可在本地运行 `python scripts/check_public.py` 做隐私自查，详见 [SECURITY.md](SECURITY.md)。
 
-## 开源与适配
-
-先完成本地审阅，再自行创建 GitHub 仓库与推送。提交前检查 `git diff --cached` 和发布检查结果；不要直接上传整个工作目录。尚未提交时可先选择公开署名与 GitHub noreply 邮箱；这只能减少邮箱公开，不能隐藏 GitHub 账号关联。
+## 贡献与许可
 
 贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，新来源的协议边界与测试要求见 [docs/adapters.md](docs/adapters.md)。本项目代码为 [MIT](LICENSE)；第三方依赖与模型按各自许可使用。

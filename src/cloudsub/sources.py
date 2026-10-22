@@ -231,7 +231,7 @@ class WebDAVSource(HttpSource):
             if path == folder or path in seen:
                 continue
             prefix = folder + "/" if folder else ""
-            if not path.startswith(prefix) or "/" in path[len(prefix):] or not path:
+            if not path.startswith(prefix) or "/" in path[len(prefix):]:
                 raise CloudSubError("WebDAV returned a resource outside the requested directory.")
             seen.add(path)
             props = None
@@ -281,7 +281,7 @@ class WebDAVSource(HttpSource):
         self._download(self._resource_url(path), target)
 
     def upload(self, path: str, content: bytes):
-        if Path(_path(path)).suffix.lower() not in (".srt", ".vtt"):
+        if Path(_path(path)).suffix.lower() != ".srt":
             raise CloudSubError("Only subtitle files may be uploaded.")
         if len(content) > MAX_SUBTITLE_BYTES:
             raise CloudSubError("Subtitle exceeds the upload size limit.")

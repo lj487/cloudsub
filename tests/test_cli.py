@@ -20,13 +20,20 @@ class Handler(BaseHTTPRequestHandler):
     writes = {}
     methods = []
     fail_chinese_once = False
+    names = ["test-private.mp4"]
 
     def log_message(self, *_):
         pass
 
     def do_PROPFIND(self):
         self.methods.append("PROPFIND")
-        body = b'''<d:multistatus xmlns:d="DAV:"><d:response><d:href>/dav/test-private.mp4</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>4</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>'''
+        responses = "".join(
+            f'<d:response><d:href>/dav/{name}</d:href><d:propstat><d:prop><d:resourcetype/>'
+            '<d:getcontentlength>4</d:getcontentlength></d:prop>'
+            '<d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>'
+            for name in self.names
+        )
+        body = f'<d:multistatus xmlns:d="DAV:">{responses}</d:multistatus>'.encode()
         self.send_response(207)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -62,6 +69,7 @@ class CLITests(unittest.TestCase):
         Handler.writes = {}
         Handler.methods = []
         Handler.fail_chinese_once = False
+        Handler.names = ["test-private.mp4"]
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -140,6 +148,18 @@ class CLITests(unittest.TestCase):
                     with redirect_stdout(io.StringIO()):
                         self.assertEqual(main(["run", "--config", str(settings), "--original-only", "--output", str(Path(directory) / "subtitles")]), 0)
                     translate.assert_not_called()
+
+    def test_limit_counts_only_new_work_so_reruns_advance(self):
+        Handler.names = ["test-one.mp4", "test-two.mp4"]
+        config = Config(SourceConfig("webdav", self.url + "/dav/", allow_http=True), ASRConfig(), TranslationConfig())
+        with tempfile.TemporaryDirectory() as directory, patch("cloudsub.cli.Transcriber") as asr:
+            asr.return_value.transcribe.return_value = [Segment(0, 1, "hello")]
+            args = self.arguments(directory, original_only=True, limit=1)
+            for expected_calls, expected_files in ((1, 1), (2, 2), (2, 2)):
+                with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    self.assertEqual(run(config, args), 0)
+                self.assertEqual(asr.return_value.transcribe.call_count, expected_calls)
+                self.assertEqual(len(list(args.output.glob("*.original.srt"))), expected_files)
 
     def test_accounts_with_same_endpoint_and_path_do_not_share_subtitles(self):
         with tempfile.TemporaryDirectory() as directory, patch("cloudsub.cli.Transcriber") as asr:

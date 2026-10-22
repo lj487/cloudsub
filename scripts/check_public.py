@@ -9,7 +9,7 @@ from urllib.parse import parse_qsl, urlsplit
 
 
 ALLOWED = re.compile(
-    r"(?:pyproject\.toml|README\.md|LICENSE|SECURITY\.md|CONTRIBUTING\.md|"
+    r"(?:pyproject\.toml|README(?:\.en)?\.md|LICENSE|SECURITY\.md|CONTRIBUTING\.md|"
     r"config\.example\.toml|\.gitignore|\.gitattributes|docs/[^/]+\.md|"
     r"src/cloudsub/[^/]+\.py|tests/test_[^/]+\.py|scripts/check_public\.py|"
     r"\.github/workflows/[^/]+\.ya?ml)"

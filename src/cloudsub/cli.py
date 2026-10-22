@@ -50,7 +50,7 @@ def run(config: Config, args) -> int:
     work = Path(".local/work")
     work.mkdir(parents=True, exist_ok=True, mode=0o700)
     transcriber = Transcriber(config.transcription, Path(".local/models"))
-    completed = failed = processed = 0
+    completed = failed = processed = matched = 0
     with ExitStack() as stack:
         source = stack.enter_context(open_source(config))
         translator = None if args.original_only else stack.enter_context(Translator(config.translation))
@@ -60,18 +60,21 @@ def run(config: Config, args) -> int:
             identity = task_id(config, remote)
             if args.id and identity != args.id:
                 continue
+            matched += 1
+            # --limit counts tasks that need new work, so reruns move past finished ones.
             if args.limit is not None and processed >= args.limit:
                 break
-            processed += 1
             print(f"Processing {identity}", flush=True)
             original = output / f"{identity}.original.srt"
             chinese = output / f"{identity}.zh.srt"
+            worked = args.upload
             try:
                 if original.is_symlink() or chinese.is_symlink():
                     raise CloudSubError("Subtitle output must not be a symbolic link.")
                 if original.exists():
                     segments = read_srt(original)
                 else:
+                    worked = True
                     with tempfile.TemporaryDirectory(prefix="task-", dir=work) as temporary:
                         media = Path(temporary) / "input.media"
                         source.download(remote.path, media)
@@ -82,6 +85,7 @@ def run(config: Config, args) -> int:
                     if chinese.exists():
                         read_srt(chinese)
                     else:
+                        worked = True
                         write_srt(chinese, translator.translate(segments))
                     subtitles.append((chinese, ".zh.srt"))
                 if args.upload:
@@ -96,7 +100,8 @@ def run(config: Config, args) -> int:
             except (OSError, UnicodeError) as error:
                 failed += 1
                 print(f"Failed {identity}: local file operation failed ({type(error).__name__}).", file=sys.stderr)
-    if processed == 0:
+            processed += worked
+    if matched == 0:
         raise CloudSubError("No matching media files were found.")
     print(f"Completed: {completed}; failed: {failed}.")
     return 1 if failed else 0
