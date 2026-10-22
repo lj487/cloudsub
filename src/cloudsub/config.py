@@ -117,14 +117,14 @@ def load_config(path: Path) -> Config:
     if bool(username) != bool(password):
         raise CloudSubError("Configure both username_env and password_env, or neither.")
     asr = _section(data, "transcription", {"model", "device", "compute_type", "language", "offline"})
-    device = _text(asr, "device", "cpu")
+    device = _text(asr, "device", ASRConfig.device)
     if device not in {"cpu", "cuda", "auto"}:
         raise CloudSubError("Transcription device must be cpu, cuda or auto.")
     language = _text(asr, "language")
     if language and not re.fullmatch(r"[a-z]{2,3}", language):
         raise CloudSubError("Language must be empty or a two/three-letter language code.")
-    model = _text(asr, "model", "small")
-    compute = _text(asr, "compute_type", "int8")
+    model = _text(asr, "model", ASRConfig.model)
+    compute = _text(asr, "compute_type", ASRConfig.compute_type)
     if not model or compute not in {"int8", "float32", "float16", "int8_float16", "default"}:
         raise CloudSubError("Invalid transcription model or compute_type.")
     translation = _section(data, "translation", {"provider", "url", "model", "api_key_env", "allow_remote", "json_mode"})

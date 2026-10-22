@@ -9,17 +9,17 @@
 ```sh
 python -m pip install -e .
 python -m unittest discover -s tests
-python scripts/check_public.py
 ```
 
-普通测试使用模拟传输与模型，不需要个人网盘、GPU、识别模型或翻译服务。CI 覆盖 Windows、macOS、Linux 的 Python 3.11 / 3.13，另在 Ubuntu / Python 3.12 安装识别依赖，解码合成音频但不下载模型；实际执行结果以对应提交的 Actions 运行记录为准。真实服务、模型推理和 CUDA 兼容性需要单独验证，不属于无模型 CI 的保证范围。
+`scripts/check_public.py` 是维护者公开前的本地隐私自查，不在 CI 中运行，贡献者无需执行。
+
+普通测试使用模拟传输与模型，不需要个人网盘、GPU、识别模型或翻译服务。CI 在 Windows、macOS、Linux 上运行 Python 3.11 / 3.13，另在 Ubuntu / Python 3.12 安装识别依赖，解码合成音频但不下载模型；实际执行结果以对应提交的 Actions 运行记录为准。真实服务、模型推理和 CUDA 兼容性需要单独验证，不属于无模型 CI 的保证范围。
 
 ## 提交要求
 
 - 改动保持最小，补充能证明行为与隐私边界的测试。
 - 测试使用 `example.com` / `.invalid` 域名、人工媒体和 `test-` / `dummy-` 凭据，禁止复制个人环境的响应、日志或配置。
 - 保留错误处理、路径校验、认证隔离、条件上传和本地结果；不要增加自动删除原媒体的操作。
-- 新增公开文件路径时同步审阅发布检查中的白名单。不要通过放宽所有路径或敏感规则让检查通过。
 - 提交前人工检查 `git diff --cached`。项目不自动提交、推送或发布用户资料。
 
 PR 说明具体问题、变更后的行为与实际执行的验证，明确未测试的真实服务或硬件环境。涉及来源适配时，遵守 [适配说明](docs/adapters.md)。

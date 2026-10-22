@@ -68,7 +68,7 @@ def read_srt(path: Path) -> list[Segment]:
         raise CloudSubError("Cannot read existing SRT; move it aside before retrying.") from None
 
 
-def write_srt(path: Path, segments: list[Segment]) -> bytes:
+def write_srt(path: Path, segments: list[Segment]) -> None:
     content = render_srt(segments).encode("utf-8")
     # Exclusive creation preserves existing user subtitles, including concurrent runs.
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -78,7 +78,6 @@ def write_srt(path: Path, segments: list[Segment]) -> bytes:
     except BaseException:
         path.unlink(missing_ok=True)
         raise
-    return content
 
 
 class Transcriber:
@@ -88,12 +87,12 @@ class Transcriber:
         self.model = None
 
     def transcribe(self, media: Path) -> list[Segment]:
-        os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
-        os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
-        os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
-        os.environ["DO_NOT_TRACK"] = "1"
         try:
             if self.model is None:
+                os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
+                os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+                os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+                os.environ["DO_NOT_TRACK"] = "1"
                 from faster_whisper import WhisperModel
                 model_path = self.config.model
                 if self.config.offline:

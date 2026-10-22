@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,12 +8,26 @@ version = "0.1.0"
 description = "Subtitles for WebDAV, OpenList and HTTP with local ASR and optional translation APIs"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "LJ487"}]
+keywords = ["subtitles", "webdav", "openlist", "whisper", "faster-whisper", "srt"]
+classifiers = [
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = ["httpx>=0.28,<1"]
 
 [project.optional-dependencies]
 # faster-whisper 1.2 uses av.open(metadata_errors=...), removed in PyAV 19.
 asr = ["faster-whisper>=1.2,<2", "av>=11,<19"]
+
+[project.urls]
+Homepage = "https://github.com/LJ487/cloudsub"
+Issues = "https://github.com/LJ487/cloudsub/issues"
 
 [project.scripts]
 cloudsub = "cloudsub.cli:main"
